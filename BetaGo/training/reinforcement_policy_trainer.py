@@ -4,11 +4,13 @@ import numpy as np
 from shutil import copyfile
 from keras.optimizers import Optimizer
 import keras.backend as K
-from AlphaGo.ai import ProbabilisticPolicyPlayer
-import AlphaGo.go as go
-from AlphaGo.go import GameState
-from AlphaGo.models.policy import CNNPolicy
-from AlphaGo.util import flatten_idx
+import sys
+sys.path.append("..")
+from BetaGo.ai import ProbabilisticPolicyPlayer
+import BetaGo.go as go
+from BetaGo.go import GameState
+from BetaGo.models.CNNPolicy import CNNPolicy
+from BetaGo.util import flatten_index
 
 
 class BatchedReinforcementLearningSGD(Optimizer):
@@ -119,7 +121,7 @@ def _make_training_pair(st, mv, preprocessor):
     # Convert move to one-hot
     st_tensor = preprocessor.state_to_tensor(st)
     mv_tensor = np.zeros((1, st.size * st.size))
-    mv_tensor[(0, flatten_idx(mv, st.size))] = 1
+    mv_tensor[(0, flatten_index(mv, st.size))] = 1
     return (st_tensor, mv_tensor)
 
 

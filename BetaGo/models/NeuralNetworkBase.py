@@ -2,6 +2,10 @@ from keras import backend as K
 from keras.models import model_from_json
 from keras.engine.topology import Layer
 from BetaGo.preprocessing.preprocessing import Preprocess
+# from CNNPolicy import CNNPolicy
+# from CNNPolicy import ResnetPolicy
+# from CNNValue import CNNValue
+
 import json
 
 
@@ -11,7 +15,8 @@ class NeuralNetworkBase(object):
         construction of a 'forward' function, etc. """
 
     # keep track of subclasses to make generic saving/loading cleaner.
-    # subclasses can be 'registered' with the @neuralnet decorator
+    # subclasses can be 'registered' with the @NeuralNetwork decorator
+    # subclasses = {"CNNPolicy": CNNPolicy, "ResnetPolicy": ResnetPolicy, "CNNValue": CNNValue}
     subclasses = {}
 
     def __init__(self, feature_list, **kwargs):
@@ -62,15 +67,16 @@ class NeuralNetworkBase(object):
 
     @staticmethod
     def load_model(json_file):
-        """create a new neural net object from the architecture specified in json_file
+        """create a new neural network object from the architecture specified in json_file
         """
         with open(json_file, 'r') as f:
             object_specs = json.load(f)
 
         # Create object; may be a subclass of networks saved in specs['class']
         class_name = object_specs.get('class', 'CNNPolicy')
+        # print NeuralNetworkBase.subclasses
         try:
-            network_class = NeuralNetBase.subclasses[class_name]
+            network_class = NeuralNetworkBase.subclasses[class_name]
         except KeyError:
             raise ValueError("Unknown neural network type in json file: {}\n(was it registered with the @neuralnet decorator?)".format(network_class))
 
@@ -108,10 +114,10 @@ class NeuralNetworkBase(object):
             json.dump(object_specs, f)
 
 
-def neuralnet(cls):
-    """Class decorator for registering subclasses of NeuralNetBase
+def register_to_neuralnetworkbase(cls):
+    """Class decorator for registering subclasses of NeuralNetworkBase
     """
-    NeuralNetBase.subclasses[cls.__name__] = cls
+    NeuralNetworkBase.subclasses[cls.__name__] = cls
     return cls
 
 

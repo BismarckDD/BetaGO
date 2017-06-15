@@ -1,20 +1,22 @@
 import os
-from AlphaGo.training.reinforcement_policy_trainer import \
+import sys
+sys.path.append("..")
+from BetaGo.training.reinforcement_policy_trainer import \
     run_training, _make_training_pair, BatchedReinforcementLearningSGD, log_loss
+from BetaGo.models.CNNPolicy import CNNPolicy
+from BetaGo.go import GameState
 import unittest
 import numpy as np
 import numpy.testing as npt
 import keras.backend as K
-from AlphaGo.models.policy import CNNPolicy
-from AlphaGo.go import GameState
 
 
 class TestReinforcementPolicyTrainer(unittest.TestCase):
 
     def testTrain(self):
-        model = os.path.join('tests', 'test_data', 'minimodel.json')
-        init_weights = os.path.join('tests', 'test_data', 'hdf5', 'random_minimodel_weights.hdf5')
-        output = os.path.join('tests', 'test_data', '.tmp.rl.training/')
+        model = os.path.join('test_data', 'minimodel.json')
+        init_weights = os.path.join('test_data', 'hdf5', 'random_minimodel_weights.hdf5')
+        output = os.path.join('test_data', '.tmp.rl.training/')
         args = [model, init_weights, output, '--game-batch', '1', '--iterations', '1']
         run_training(args)
 
@@ -27,7 +29,7 @@ class TestReinforcementPolicyTrainer(unittest.TestCase):
 class TestOptimizer(unittest.TestCase):
 
     def testApplyAndResetOnGamesFinished(self):
-        policy = CNNPolicy.load_model(os.path.join('tests', 'test_data', 'minimodel.json'))
+        policy = CNNPolicy.load_model(os.path.join('test_data', 'minimodel.json'))
         state = GameState(size=19)
         optimizer = BatchedReinforcementLearningSGD(lr=0.01, ng=2)
         policy.model.compile(loss=log_loss, optimizer=optimizer)
@@ -86,7 +88,7 @@ class TestOptimizer(unittest.TestCase):
 
         def run_and_get_new_weights(init_weights, win0, win1):
             state = GameState(size=19)
-            policy = CNNPolicy.load_model(os.path.join('tests', 'test_data', 'minimodel.json'))
+            policy = CNNPolicy.load_model(os.path.join('test_data', 'minimodel.json'))
             policy.model.set_weights(init_weights)
             optimizer = BatchedReinforcementLearningSGD(lr=0.01, ng=2)
             policy.model.compile(loss=log_loss, optimizer=optimizer)
@@ -116,7 +118,7 @@ class TestOptimizer(unittest.TestCase):
                 policy.model.train_on_batch(s, a)
             return policy.model.get_weights()
 
-        policy = CNNPolicy.load_model(os.path.join('tests', 'test_data', 'minimodel.json'))
+        policy = CNNPolicy.load_model(os.path.join('test_data', 'minimodel.json'))
         initial_parameters = policy.model.get_weights()
         # Cases 1 and 2 have identical starting models and identical (state, action) pairs,
         # but they differ in who won the games.

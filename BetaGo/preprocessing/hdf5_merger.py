@@ -261,13 +261,13 @@ def run_hdf5_merger(cmd_line_args=None):
         Ladder features are not currently implemented")
     parser.add_argument("--outfile", "-o",
                         help="Destination to write hdf5 file",
-                        default="d:\\dodi\\BetaGo\\data\\merged.hdf5")
+                        default="..\\..\\data\\active_version.hdf5")
     parser.add_argument("--directory", "-d",
                         help="Directory containing hdf5 files to process.",
-                        default="d:\\dodi\\data\\hdf5s\\")
+                        default="..\\..\\data\\hdf5s")
     parser.add_argument("--recurse", "-r",
                         help="Set to recurse through directories searching for hdf5 files",
-                        default=False, action="store_true")  # noqa: E501
+                        default=False, action="store_true")
     parser.add_argument("--verbose", "-v", help="Turn on verbose mode",
                         default=False, action="store_true")
 

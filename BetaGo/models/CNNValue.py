@@ -2,6 +2,7 @@
 from keras.layers import convolutional
 from keras.layers.core import Dense, Flatten
 import keras.backend as K
+from NeuralNetworkBase import NeuralNetworkBase
 
 ### Parameters obtained from paper ###
 # K = 152                        # depth of convolutional layers

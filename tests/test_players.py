@@ -1,4 +1,4 @@
-from AlphaGo.ai import ProbabilisticPolicyPlayer
+from BetaGo.ai import ProbabilisticPolicyPlayer
 import numpy as np
 import unittest
 

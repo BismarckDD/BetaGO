@@ -1,3 +1,5 @@
+import sys
+sys.path.append("D:\dodi\BetaGo")
 from BetaGo.go import GameState
 from BetaGo.mcts import MCTS, TreeNode
 import numpy as np

@@ -1,13 +1,15 @@
 import os
+import sys
+sys.path.append("..")
 from BetaGo.training.supervised_policy_trainer import run_training
 import unittest
 
 
 class TestSupervisedPolicyTrainer(unittest.TestCase):
     def testTrain(self):
-        model = 'tests/test_data/minimodel.json'
-        data = 'tests/test_data/hdf5/alphago-vs-lee-sedol-features.hdf5'
-        output = 'tests/test_data/.tmp.training/'
+        model = 'test_data/minimodel.json'
+        data = 'test_data/hdf5/alphago-vs-lee-sedol-features.hdf5'
+        output = 'test_data/.tmp.training/'
         args = [model, data, output, '--epochs', '1']
         run_training(args)
 

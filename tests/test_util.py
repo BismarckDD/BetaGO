@@ -2,7 +2,7 @@ import unittest
 import os
 import sgf
 import sys
-sys.path.append("D:\dodi\BetaGo")
+sys.path.append("..")
 from BetaGo.util import sgf_iter_states
 
 
@@ -25,7 +25,7 @@ def list_sgfs(path):
 class TestUtil(unittest.TestCase):
 
     def test_util(self):
-        path = "D:\\dodi\\sgf\\test"
+        path = "D:\\dodi\\BetaGo\\tests\\test_data\\sgf"
         """
         for (dirpath, subdirs, files) in os.walk(path):
             print dirpath, subdirs, files
@@ -38,7 +38,8 @@ class TestUtil(unittest.TestCase):
                 print collection[0].rest
                 prop = collection[0].root.properties
                 print str(prop) #properties is a dict
-                # state_action_iterator = sgf_iter_states(file_object.read(), include_end=False)
+                state_action_iterator = sgf_iter_states(file_object.read(), include_end=False)
+                print state_action_iterator
 
 
 # Maybe use register mechanism to run all tests.

@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 from BetaGo.go import GameState
 import numpy as np
 import BetaGo.go as go

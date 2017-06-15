@@ -1,3 +1,5 @@
+import sys
+sys.path.append("D:\dodi\BetaGo")
 from BetaGo.models.CNNPolicy import CNNPolicy, ResnetPolicy
 from BetaGo import go
 from BetaGo.go import GameState

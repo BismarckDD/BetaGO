@@ -2,10 +2,11 @@ from keras.models import Sequential, Model
 from keras.layers import convolutional, merge, Input
 from keras.layers.core import Activation, Flatten
 from BetaGo.util import flatten_index
-from BetaGo.models.NeuralNetworkBase import NeuralNetworkBase, Bias, neuralnet
+from NeuralNetworkBase import NeuralNetworkBase, Bias, register_to_neuralnetworkbase
 import numpy as np
 
 
+@register_to_neuralnetworkbase
 class CNNPolicy(NeuralNetworkBase):
     
     """Uses a Convolutional Neural Network to evaluate the state of a game
@@ -135,13 +136,15 @@ class CNNPolicy(NeuralNetworkBase):
 
         # reshape output to be board x board
         network.add(Flatten())
-
+        # add a bias to each board location
+        network.add(Bias())
         # softmax makes it into a probability distribution
         network.add(Activation('softmax'))
 
         return network
 
 
+@register_to_neuralnetworkbase
 class ResnetPolicy(CNNPolicy):
     """Residual network architecture as per He at al. 2015
     """
@@ -259,6 +262,8 @@ class ResnetPolicy(CNNPolicy):
             border_mode='same')(convolution_path)
         # flatten output
         network_output = Flatten()(convolution_path)
+        # add a bias to each board location
+        network_output = Bias()(network_output)
         # softmax makes it into a probability distribution
         network_output = Activation('softmax')(network_output)
 

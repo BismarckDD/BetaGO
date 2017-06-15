@@ -35,7 +35,7 @@ def shuffled_hdf5_batch_generator(state_dataset, action_dataset,
             # 3rd and 4th dimensions
             state = np.array([transform(plane) for plane in state_dataset[data_index]])
             # must be cast to a tuple so that it is interpreted as (x,y) not [(x,:), (y,:)]
-            action_xy = tuple(action_dataset[data_idx])
+            action_xy = tuple(action_dataset[data_index])
             action = transform(one_hot_action(action_xy, game_size))
             Xbatch[batch_index] = state
             Ybatch[batch_index] = action.flatten()

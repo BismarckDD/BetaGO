@@ -1,6 +1,8 @@
+import sys
+sys.path.append("..")
 from interface.gtp_wrapper import run_gtp
 from multiprocessing import Process
-from AlphaGo import go
+from BetaGo import go
 import unittest
 
 

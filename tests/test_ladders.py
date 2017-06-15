@@ -1,4 +1,6 @@
-from AlphaGo.go import BLACK, WHITE
+import sys
+sys.path.append("D:\dodi\BetaGo")
+from BetaGo.go import BLACK, WHITE
 import unittest
 
 import parseboard

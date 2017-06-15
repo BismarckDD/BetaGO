@@ -1,13 +1,15 @@
 import numpy as np
 import h5py as h5
-import sys
-sys.path.append("D:\dodi\BetaGo")
+# import sys
+# sys.path.append("D:\dodi\BetaGo")
 from BetaGo.preprocessing.preprocessing import Preprocess
 from BetaGo.util import sgf_iter_states
 import BetaGo.go as go
 import os
 import warnings
 import sgf
+import multiprocessing
+from multiprocessing.pool import Pool
 
 
 class SizeMismatchError(Exception):
@@ -136,6 +138,7 @@ class HDF5_converter:
                         print("\t-no usable data-")
         except Exception as e:
             print("sgfs_to_hdf5 failed")
+            print e
             os.remove(tmp_file)
             raise e
 
@@ -159,10 +162,10 @@ def run_hdf5_converter(cmd_line_args=None):
         Ladder features are not currently implemented")
     parser.add_argument("--features", "-f",
                         help="Comma-separated list of features to compute and store or 'all'",
-                        default='all')  # noqa: E501
+                        default='all')
     parser.add_argument("--outfile", "-o",
                         help="Destination to write data (hdf5 file)",
-                        required=True)  # noqa: E501
+                        required=True)
     parser.add_argument("--directory", "-d",
                         help="Directory containing SGF files to process.",
                         default="d:\\dodi\\data\\sgfs\\")
@@ -206,22 +209,54 @@ def run_hdf5_converter(cmd_line_args=None):
 
     def _walk_all_sgfs(path):
         for (dirpath, subdirs, files) in os.walk(path):
-            return _list_sgfs(dirpath)
+            files = os.listdir(dirpath)
+            for sgf_file in files:
+                if _is_sgf(sgf_file):
+                    yield os.path.join(dirpath, sgf_file)
 
     def _list_sgfs(path):
         files = os.listdir(path)
-        for file in files:
-            if _is_sgf(file):
-                yield os.path.join(path, file)
+        for sgf_file in files:
+            if _is_sgf(sgf_file):
+                yield os.path.join(path, sgf_file)
 
     # get an iterator of SGF files according to command line args
     if args.directory:
+        # print "Enter"
         if args.recurse:
-            files = _walk_all_sgfs(args.directory)
+            # print "Enter"
+            sgf_files = _walk_all_sgfs(args.directory)
         else:
-            files = _list_sgfs(args.directory)
+            sgf_files = _list_sgfs(args.directory)
 
-    converter.sgfs_to_hdf5(files, args.outfile, board_size=args.size, verbose=args.verbose)
+    # print args.recurse, args.directory, type(sgf_files)
+
+    # def test_walk_all_sgfs(path):
+    #     for (dirpath, subdirs, files) in os.walk(path):
+    #         print dirpath, subdirs
+
+    # test_walk_all_sgfs(args.directory)
+    # for sgf_file in _walk_all_sgfs(args.directory):
+    #     print sgf_file
+
+    """
+    # Check if it gets all sgf files.
+    for (dirpath, subdirs, files) in os.walk(args.directory):
+        files = os.listdir(dirpath)
+        for file in files:
+            if _is_sgf(file):
+                print os.path.join(dirpath, file)
+    """
+
+    n_workers = multiprocessing.cpu_count() if not args.verbose else 1  # set to 1 when debugging
+    global worker_pool
+    if worker_pool is None:
+        worker_pool = Pool(processes=n_workers)
+    ready = []  # game states waiting for playout
+    finish = []  # game states finished evaluation
+    ongoing = []  # currently ongoing playout jobs
+    curr_sim = 0
+    converter.sgfs_to_hdf5(sgf_files, args.outfile, board_size=args.size, verbose=args.verbose)
 
 
 if __name__ == '__main__':

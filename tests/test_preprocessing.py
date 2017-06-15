@@ -1,7 +1,8 @@
+import sys
+sys.path.append("D:\dodi\BetaGo")
 import numpy as np
 import unittest
 import parseboard
-import sys
 from BetaGo.preprocessing.preprocessing import Preprocess
 import BetaGo.go as go
 
