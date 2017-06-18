@@ -5,16 +5,18 @@ import keras.backend as K
 from NeuralNetworkBase import NeuralNetworkBase
 
 ### Parameters obtained from paper ###
-# K = 152                        # depth of convolutional layers
-# LEARNING_RATE = .003           # initial learning rate
-# DECAY = 8.664339379294006e-08  # rate of exponential learning_rate decay
+K = 152                        # depth of convolutional layers
+LEARNING_RATE = .003           # initial learning rate
+DECAY = 8.664339379294006e-08  # rate of exponential learning_rate decay
 
 
-class CNNValue(object):
+class CNNValue(NeuralNetworkBase):
 
     """ Uses a Convolutional Neural Network to evaluate the state of a game
         and compute a probability distribution over the next action
     """
+    def __init__(self, feature_list, **kwargs):
+        super(CNNValue, self).__init__(self, feature_list, **kwargs)
 
     @staticmethod
     def create_network(**kwargs):
@@ -42,5 +44,5 @@ class CNNValue(object):
 
 
 if __name__ == '__main__':
-    print "Wait to implement"
-# TODO command line instantiation.
+
+    value_network = CNNValue()

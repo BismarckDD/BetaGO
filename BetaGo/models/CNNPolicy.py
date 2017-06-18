@@ -13,6 +13,9 @@ class CNNPolicy(NeuralNetworkBase):
     and compute a probability distribution over the next action
     """
 
+    def __init__(self, feature_list, **kwargs):
+        super(CNNPolicy, self).__init__(self, feature_list, **kwargs)
+
     def _select_moves_and_normalize(self, nn_output, moves, size):
 
         """Helper function to normalize a distribution over the given list of moves
@@ -98,6 +101,7 @@ class CNNPolicy(NeuralNetworkBase):
         params = defaults
         params.update(kwargs)
 
+        print params
         # create the network:
         # a series of zero-paddings followed by convolutions
         # such that the output dimensions are also board x board
@@ -116,8 +120,13 @@ class CNNPolicy(NeuralNetworkBase):
         # create all other layers
         for i in xrange(2, params["layers"] + 1):
             # use filter_width_K if it is there, otherwise use 3
-            filter_width = params.get("filter_width_i" % i, filter_width_default)
-            filters_layer = params.get("filters_layer_i" % i, filters_layer_default)
+            filter_width = params.get("filter_width_{0}".format(i), filter_width_default)
+            filters_layer = params.get("filters_layer_{0}".format(i), filters_layer_default)
+
+            # use filters_per_layer_K if it is there, otherwise use default value
+            # filter_count_key = "filters_per_layer_%d" % i
+            # filter_nb = params.get(filter_count_key, params["filters_per_layer"])
+
             network.add(convolutional.Convolution2D(
                 nb_filter=filters_layer,
                 nb_row=filter_width,
@@ -248,7 +257,7 @@ class ResnetPolicy(CNNPolicy):
         while layer < params['layers']:
             convolution_path, layer = add_resnet_unit(convolution_path, layer, **params)
         if layer > params['layers']:
-            print "Due to skipping, ended with {} layers instead of {}".format(layer, params['layers'])
+            print("Due to skipping, ended with {} layers instead of {}".format(layer, params['layers']))
 
         # since each layer's activation was linear, need one more ReLu
         convolution_path = Activation('relu')(convolution_path)

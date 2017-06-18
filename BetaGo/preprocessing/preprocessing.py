@@ -1,6 +1,12 @@
-﻿#Functions for converting from GameState objects to one-hot encoded features.
+﻿# Functions for converting from GameState objects to one-hot encoded features.
 import numpy as np
 import BetaGo.go as go
+import keras.backend as K
+
+# This file is used anywhere that neural net features are used; setting the keras dimension ordering
+# here makes it universal to the project.
+# The picture channel sequence is not the same between theano and tensorflow.
+K.set_image_dim_ordering('th')
 
 """ A feature encoding WHITE, BLACK and EMPTY on separate planes, plane 0
     always refers to the current player and plane 1 to the opponent
@@ -240,6 +246,8 @@ DEFAULT_FEATURES = [
 """ A tool class to convert from AlphaGo GameState objects to tensors of one-hot
     features for Neural Network inputs
 """
+
+
 class Preprocess(object):
 
     """ Create a preprocessor object that will concatenate

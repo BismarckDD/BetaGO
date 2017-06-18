@@ -2,12 +2,16 @@
 import numpy as np
 import os
 import warnings
+import sys
+sys.path.append("D:\dodi\BetaGo")
+from BetaGo.preprocessing.preprocessing import Preprocess
 
 
 class HDF5_merger:
 
     def __init__(self):
-        self.n_features = 47
+        self.feature_processor = Preprocess(features)
+        self.n_features = self.feature_processor.output_dim
 
     """ Convert all src hdf5 files into an hdf5 file
         Arguments:
@@ -236,17 +240,20 @@ class HDF5_merger:
 
 
 def _is_hdf5(filename):
-    return filename.strip()[-3:] == ".h5"
+    return filename.strip()[-5:] == ".hdf5"
 
 
 def _list_hdf5(path):
     files = os.listdir(path)
-    return (os.path.join(path, f) for f in files if _is_hdf5(f))
+    # print files
+    return [os.path.join(path, f) for f in files if _is_hdf5(f)]
 
 
 def _walk_all_hdf5(path):
-    for (dirpath, dirname, files) in os.walk(path):
-        return _list_hdf5(dirpath)
+    result = []
+    for (dirpath, subdirs, files) in os.walk(path):
+        result.extend(_list_hdf5(dirpath))
+    return result
 
 
 def run_hdf5_merger(cmd_line_args=None):
@@ -283,8 +290,9 @@ def run_hdf5_merger(cmd_line_args=None):
         else:
             src_hdf5_files = _list_hdf5(args.directory)
     des_hdf5_file = args.outfile
+    print src_hdf5_files
     merger = HDF5_merger()
-    merger.valueNet_merge(src_hdf5_files, des_hdf5_file,
+    merger.policyNet_merge(src_hdf5_files, des_hdf5_file,
                           board_size=19, ignore_errors=False, verbose=True);
 
 

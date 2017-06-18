@@ -25,7 +25,7 @@ def shuffled_hdf5_batch_generator(state_dataset, action_dataset,
     game_size = state_batch_shape[-1]
     Xbatch = np.zeros(state_batch_shape)
     Ybatch = np.zeros((batch_size, game_size * game_size))
-    batch_index = 0
+    batch_idx = 0
     while True:
         for data_index in indices:
             # choose a random transformation of the data (rotations/reflections of the board)
@@ -37,11 +37,11 @@ def shuffled_hdf5_batch_generator(state_dataset, action_dataset,
             # must be cast to a tuple so that it is interpreted as (x,y) not [(x,:), (y,:)]
             action_xy = tuple(action_dataset[data_index])
             action = transform(one_hot_action(action_xy, game_size))
-            Xbatch[batch_index] = state
-            Ybatch[batch_index] = action.flatten()
-            batch_index += 1
-            if batch_index == batch_size:
-                batch_index = 0
+            Xbatch[batch_idx] = state
+            Ybatch[batch_idx] = action.flatten()
+            batch_idx += 1
+            if batch_idx == batch_size:
+                batch_idx = 0
                 yield (Xbatch, Ybatch)
 
 
@@ -81,8 +81,7 @@ BOARD_TRANSFORMATIONS = {
     "fliplr": lambda feature: np.fliplr(feature),
     "flipud": lambda feature: np.flipud(feature),
     "diag1": lambda feature: np.transpose(feature),
-    "diag2": lambda feature: np.fliplr(np.rot90(feature, 1))
-}
+    "diag2": lambda feature: np.fliplr(np.rot90(feature, 1)), }
 
 
 def run_training(cmd_line_args=None):
@@ -91,20 +90,20 @@ def run_training(cmd_line_args=None):
     import argparse
     parser = argparse.ArgumentParser(description='Perform supervised training on a policy network.')
     # required args
-    parser.add_argument("model", help="Path to a JSON model file (i.e. from CNNPolicy.save_model())")  # noqa: E501
     parser.add_argument("train_data", help="A .h5 file of training data")
     parser.add_argument("out_directory", help="directory where metadata and weights will be saved")
     # frequently used args
+    parser.add_argument("--model", "-M", type=str, default=None, help="Path to a JSON model file (i.e. from CNNPolicy.save_model())")
     parser.add_argument("--minibatch", "-B", help="Size of training data minibatches. Default: 16", type=int, default=16)  # noqa: E501
     parser.add_argument("--epochs", "-E", help="Total number of iterations on the data. Default: 10", type=int, default=10)  # noqa: E501
-    parser.add_argument("--epoch-length", "-l", help="Number of training examples considered 'one epoch'. Default: # training data", type=int, default=None)  # noqa: E501
-    parser.add_argument("--learning-rate", "-r", help="Learning rate - how quickly the model learns at first. Default: .03", type=float, default=.03)  # noqa: E501
-    parser.add_argument("--decay", "-d", help="The rate at which learning decreases. Default: .0001", type=float, default=.0001)  # noqa: E501
-    parser.add_argument("--verbose", "-v", help="Turn on verbose mode", default=False, action="store_true")  # noqa: E501
+    parser.add_argument("--epoch-length", "-l", help="Number of training examples considered 'one epoch'. Default: # training data", type=int, default=None)
+    parser.add_argument("--learning-rate", "-r", help="Learning rate - how quickly the model learns at first. Default: .03", type=float, default=.03)
+    parser.add_argument("--decay", "-d", help="The rate at which learning decreases. Default: .0001", type=float, default=.0001)
+    parser.add_argument("--verbose", "-v", help="Turn on verbose mode", default=False, action="store_true")
     # slightly fancier args
-    parser.add_argument("--weights", help="Name of a .h5 weights file (in the output directory) to load to resume training", default=None)  # noqa: E501
-    parser.add_argument("--train-val-test", help="Fraction of data to use for training/val/test. Must sum to 1. Invalid if restarting training", nargs=3, type=float, default=[0.93, .05, .02])  # noqa: E501
-    parser.add_argument("--symmetries", help="Comma-separated list of transforms, subset of noop,rot90,rot180,rot270,fliplr,flipud,diag1,diag2", default='noop,rot90,rot180,rot270,fliplr,flipud,diag1,diag2')  # noqa: E501
+    parser.add_argument("--weights", help="Name of a .h5 weights file (in the output directory) to load to resume training", default=None)
+    parser.add_argument("--train-val-test", help="Fraction of data to use for training/val/test. Must sum to 1. Invalid if restarting training", nargs=3, type=float, default=[0.93, .05, .02])
+    parser.add_argument("--symmetries", help="Comma-separated list of transforms, subset of noop,rot90,rot180,rot270,fliplr,flipud,diag1,diag2", default='noop,rot90,rot180,rot270,fliplr,flipud,diag1,diag2')
     # TODO - an argument to specify which transformations to use, put it in metadata
 
     if cmd_line_args is None:
@@ -128,9 +127,26 @@ def run_training(cmd_line_args=None):
                 print "starting fresh output directory %s" % args.out_directory
 
     # load model from json spec
-    model = CNNPolicy.load_model(args.model).model
-    if resume:
-        model.load_weights(os.path.join(args.out_directory, args.weights))
+    if args.model is not None:
+        model = CNNPolicy.load_model(args.model).model
+        if resume:
+            model.load_weights(os.path.join(args.out_directory, args.weights))
+    else:
+        feature_list = [
+            "board",
+            "ones",
+            "turns_since",
+            "liberties",
+            "capture_size",
+            "self_atari_size",
+            "liberties_after",
+            # "ladder_capture",
+            # "ladder_escape",
+            "sensibleness",
+            "zeros"]
+        kwarg = {}
+        model = CNNPolicy(feature_list, **kwarg).model
+
 
     # TODO - (waiting on game_converter) verify that features of model match
     # features of training data
@@ -220,6 +236,10 @@ def run_training(cmd_line_args=None):
         symmetries)
 
     sgd = SGD(lr=args.learning_rate, decay=args.decay)
+
+    # binary_crossentropy => sigmoid.
+    # categorical_crossentropy => softmax.
+    # sparse_categorical_crossentropy => softmax && sparse data.
     model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=["accuracy"])
 
     samples_per_epoch = args.epoch_length or n_train_data
@@ -228,12 +248,12 @@ def run_training(cmd_line_args=None):
         print "STARTING TRAINING"
 
     model.fit_generator(
-        generator=train_data_generator,
-        samples_per_epoch=samples_per_epoch,
-        nb_epoch=args.epochs,
-        callbacks=[checkpointer, meta_writer],
-        validation_data=val_data_generator,
-        nb_val_samples=n_val_data)
+        generator=train_data_generator,        # transfer a (X, Y) generator into the fit.
+        samples_per_epoch=samples_per_epoch,   # batch size
+        nb_epoch=args.epochs,                  # epoch size
+        callbacks=[checkpointer, meta_writer], # callback
+        validation_data=val_data_generator,    # transfer a (X, Y) generator into the fit.
+        nb_val_samples=n_val_data)             # validation data number
 
 if __name__ == '__main__':
     run_training()

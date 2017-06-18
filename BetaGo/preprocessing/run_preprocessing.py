@@ -5,9 +5,10 @@ import os
 import shutil
 
 
-def run_prepare():
+def run_preprocessing():
 
     # stage1: download sgfs
+    # run_sgf_crawler()
 
     # stage2: convert new sgf files to new_version hdf5 file
     args = ['--features', all,
@@ -20,9 +21,9 @@ def run_prepare():
             '--outfile', '../../data/active_version.hdf5',
             '--directory', '../../data/hdf5s', '--recurse']
     run_hdf5_merger(args)
-    os.remove('../../data/hdf5s/new_version.hdf5')
+    os.remove('../../data/hdf5s/new_version*.hdf5')
     os.remove('../../data/hdf5s/old_version.hdf5')
     shutil.copyfile('../../data/active_version.hdf5', '../../data/hdf5s/old_version.hdf5')
 
 if __name__ == '__main__':
-    run_prepare()
+    run_preprocessing()

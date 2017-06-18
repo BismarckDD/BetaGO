@@ -1,12 +1,12 @@
 import numpy as np
 import h5py as h5
-# import sys
-# sys.path.append("D:\dodi\BetaGo")
+import os
+import warnings
+import sys
+sys.path.append("D:\dodi\BetaGo")
 from BetaGo.preprocessing.preprocessing import Preprocess
 from BetaGo.util import sgf_iter_states
 import BetaGo.go as go
-import os
-import warnings
 import sgf
 import multiprocessing
 from multiprocessing.pool import Pool
@@ -14,6 +14,8 @@ from multiprocessing.pool import Pool
 
 class SizeMismatchError(Exception):
     pass
+
+worker_pool = None
 
 
 class HDF5_converter:
@@ -150,6 +152,29 @@ class HDF5_converter:
         os.rename(tmp_file, hdf5_file)
 
 
+def _is_sgf(filename):
+    return filename.strip()[-4:] == ".sgf"
+
+
+def _walk_all_sgfs(path):
+    result = []
+    for (dirpath, subdirs, files) in os.walk(path):
+        result.extend(_list_sgfs(dirpath))
+    return result
+
+
+def _list_sgfs(path):
+    files = os.listdir(path)
+    return [os.path.join(path, f) for f in files if _is_sgf(f)]
+
+
+def helper_function(feature_list, sgf_files, outfile_name, size, verbose):
+    print outfile_name
+    converter = HDF5_converter(feature_list)
+    converter.sgfs_to_hdf5(sgf_files, outfile_name, board_size=size, verbose=verbose)
+    return
+
+
 def run_hdf5_converter(cmd_line_args=None):
     """Run conversions. command-line args may be passed in as a list
     """
@@ -165,10 +190,10 @@ def run_hdf5_converter(cmd_line_args=None):
                         default='all')
     parser.add_argument("--outfile", "-o",
                         help="Destination to write data (hdf5 file)",
-                        required=True)
+                        default="d:\\dodi\\BetaGo\\data\\hdf5s\\new_version.hdf5")
     parser.add_argument("--directory", "-d",
                         help="Directory containing SGF files to process.",
-                        default="d:\\dodi\\data\\sgfs\\")
+                        default="d:\\dodi\\BetaGo\\data\\sgfs\\")
     parser.add_argument("--size", "-s",
                         help="Size of the game board. SGFs not matching this are discarded with a warning",
                         type=int, default=19)
@@ -202,23 +227,7 @@ def run_hdf5_converter(cmd_line_args=None):
     if args.verbose:
         print("using features", feature_list)
 
-    converter = HDF5_converter(feature_list)
-
-    def _is_sgf(filename):
-        return filename.strip()[-4:] == ".sgf"
-
-    def _walk_all_sgfs(path):
-        for (dirpath, subdirs, files) in os.walk(path):
-            files = os.listdir(dirpath)
-            for sgf_file in files:
-                if _is_sgf(sgf_file):
-                    yield os.path.join(dirpath, sgf_file)
-
-    def _list_sgfs(path):
-        files = os.listdir(path)
-        for sgf_file in files:
-            if _is_sgf(sgf_file):
-                yield os.path.join(path, sgf_file)
+    # converter = HDF5_converter(feature_list)
 
     # get an iterator of SGF files according to command line args
     if args.directory:
@@ -248,15 +257,27 @@ def run_hdf5_converter(cmd_line_args=None):
                 print os.path.join(dirpath, file)
     """
 
-    n_workers = multiprocessing.cpu_count() if not args.verbose else 1  # set to 1 when debugging
+    workers_num = multiprocessing.cpu_count() if not args.verbose else 1  # set to 1 when debugging
     global worker_pool
     if worker_pool is None:
-        worker_pool = Pool(processes=n_workers)
-    ready = []  # game states waiting for playout
-    finish = []  # game states finished evaluation
-    ongoing = []  # currently ongoing playout jobs
-    curr_sim = 0
-    converter.sgfs_to_hdf5(sgf_files, args.outfile, board_size=args.size, verbose=args.verbose)
+        worker_pool = Pool(processes=workers_num)
+    results = []
+    sgf_files_num = len(sgf_files)
+    files_per_worker = (sgf_files_num // workers_num) + 1
+    for i in xrange(workers_num):
+        outfile_name = args.outfile.split(".")[0] + str(i*files_per_worker) + "_" + str((i+1)*files_per_worker) + ".hdf5"
+        print outfile_name
+        results.append(worker_pool.apply_async(helper_function, (feature_list,
+            sgf_files[i*files_per_worker:(i+1)*files_per_worker], outfile_name, args.size, args.verbose)))
+    worker_pool.close()
+    worker_pool.join()
+    # while results:
+    #     for result in results:
+    #         if result.ready():
+    #             results.remove(result)
+    #     time.sleep(10)
+
+    print("HDF5s have been generated!")
 
 
 if __name__ == '__main__':
